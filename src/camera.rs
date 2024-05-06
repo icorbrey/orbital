@@ -1,13 +1,14 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
 
+use crate::body::{Body, Mass};
+
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(InputManagerPlugin::<CameraMovement>::default())
-            .add_systems(Startup, Self::setup)
-            .add_systems(Update, Self::pan);
+        app.add_systems(Startup, Self::setup)
+            .add_systems(Update, Self::focus_on_center_of_mass);
     }
 }
 
@@ -16,23 +17,38 @@ pub enum CameraMovement {
     Pan,
 }
 
-impl CameraPlugin {
-    const PAN_RATE: f32 = 0.5;
+/// The actual, for realsies camera. Not the fake, for fakesies camera that the
+/// editor plugin uses.
+#[derive(Component)]
+pub struct TheActualForRealsiesCamera;
 
-    /// Adds a 2D camera to the scene and adds the input map.
+impl CameraPlugin {
     fn setup(mut commands: Commands) {
-        let input_map = InputMap::new([(CameraMovement::Pan, DualAxis::mouse_motion())]);
-        commands
-            .spawn(Camera2dBundle::default())
-            .insert(InputManagerBundle::with_map(input_map));
+        commands.spawn((TheActualForRealsiesCamera, Camera2dBundle::default()));
     }
 
-    /// Pans the camera when the mouse moves.
-    fn pan(mut query: Query<(&mut Transform, &ActionState<CameraMovement>), With<Camera2d>>) {
-        let (mut transform, action_state) = query.single_mut();
-        let direction = action_state.axis_pair(&CameraMovement::Pan).unwrap();
+    fn focus_on_center_of_mass(
+        mut cameras: Query<&mut Transform, (With<TheActualForRealsiesCamera>, Without<Body>)>,
+        bodies: Query<(&Mass, &Transform), With<Body>>,
+    ) {
+        let mut camera_transform = cameras.single_mut();
 
-        transform.translation.x -= Self::PAN_RATE * direction.x();
-        transform.translation.y += Self::PAN_RATE * direction.y();
+        if bodies.is_empty() {
+            camera_transform.translation.x = 0.0;
+            camera_transform.translation.y = 0.0;
+        } else {
+            let total_mass: f32 = bodies.iter().map(|(mass, _)| mass.0).sum();
+            let center_of_mass = bodies
+                .iter()
+                .map(|(mass, transform)| {
+                    let Vec3 { x, y, .. } = transform.translation;
+                    Vec2::new(x * mass.0, y * mass.0)
+                })
+                .sum::<Vec2>()
+                / total_mass;
+
+            camera_transform.translation.x = center_of_mass.x;
+            camera_transform.translation.y = center_of_mass.y;
+        }
     }
 }
