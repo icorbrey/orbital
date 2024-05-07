@@ -8,7 +8,7 @@ impl Plugin for MotionPlugin {
     }
 }
 
-#[derive(Component, Clone, Copy, Debug, Default)]
+#[derive(Component, Clone, Copy, Debug, Default, Reflect)]
 pub struct Motion {
     pub acceleration: Vec3,
     pub velocity: Vec3,

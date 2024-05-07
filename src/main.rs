@@ -6,6 +6,7 @@ use bevy::prelude::*;
 use bevy_editor_pls::EditorPlugin;
 use body::{BodyPlugin, SpawnBody};
 use camera::CameraPlugin;
+use leafwing_input_manager::prelude::*;
 use motion::MotionPlugin;
 
 fn main() {
@@ -13,10 +14,21 @@ fn main() {
         .add_plugins((DefaultPlugins, EditorPlugin::default()))
         .add_plugins((CameraPlugin, BodyPlugin, MotionPlugin))
         .add_systems(Startup, setup)
+        .add_systems(Update, spawn_random_body)
         .run();
 }
 
-fn setup(mut ev_spawn_body: EventWriter<SpawnBody>) {
+#[derive(Actionlike, Component, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
+enum Action {
+    SpawnRandomBody,
+}
+
+fn setup(mut commands: Commands, mut ev_spawn_body: EventWriter<SpawnBody>) {
+    commands.spawn(InputManagerBundle::with_map(InputMap::new([(
+        Action::SpawnRandomBody,
+        KeyCode::Space,
+    )])));
+
     ev_spawn_body.send_batch(vec![
         SpawnBody {
             position: Vec2::new(100.0, 0.0),
@@ -40,4 +52,20 @@ fn setup(mut ev_spawn_body: EventWriter<SpawnBody>) {
             ..default()
         },
     ]);
+}
+
+fn spawn_random_body(
+    mut ev_spawn_body: EventWriter<SpawnBody>,
+    query: Query<&ActionState<Action>>,
+) {
+    let action_state = query.single();
+
+    // if action_state.just_pressed(&Action::SpawnRandomBody) {
+    //     ev_spawn_body.send(SpawnBody {
+    //         position: (),
+    //         velocity: (),
+    //         color: (),
+    //         mass: (),
+    //     });
+    // }
 }
