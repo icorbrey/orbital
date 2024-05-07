@@ -4,6 +4,7 @@ mod motion;
 
 use bevy::prelude::*;
 use bevy_editor_pls::EditorPlugin;
+use bevy_turborand::prelude::*;
 use body::{BodyPlugin, SpawnBody};
 use camera::CameraPlugin;
 use leafwing_input_manager::prelude::*;
@@ -11,7 +12,11 @@ use motion::MotionPlugin;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, EditorPlugin::default()))
+        .add_plugins((
+            DefaultPlugins,
+            RngPlugin::default(),
+            EditorPlugin::default(),
+        ))
         .add_plugins((CameraPlugin, BodyPlugin, MotionPlugin))
         .add_systems(Startup, setup)
         .add_systems(Update, spawn_random_body)
@@ -23,11 +28,17 @@ enum Action {
     SpawnRandomBody,
 }
 
-fn setup(mut commands: Commands, mut ev_spawn_body: EventWriter<SpawnBody>) {
-    commands.spawn(InputManagerBundle::with_map(InputMap::new([(
-        Action::SpawnRandomBody,
-        KeyCode::Space,
-    )])));
+fn setup(
+    mut ev_spawn_body: EventWriter<SpawnBody>,
+    mut global_rng: ResMut<GlobalRng>,
+    mut commands: Commands,
+) {
+    let input_map = InputMap::new([(Action::SpawnRandomBody, KeyCode::Space)]);
+
+    commands.spawn((
+        InputManagerBundle::with_map(input_map),
+        RngComponent::from(&mut global_rng),
+    ));
 
     ev_spawn_body.send_batch(vec![
         SpawnBody {
@@ -55,17 +66,22 @@ fn setup(mut commands: Commands, mut ev_spawn_body: EventWriter<SpawnBody>) {
 }
 
 fn spawn_random_body(
+    mut query: Query<(&ActionState<Action>, &mut RngComponent)>,
     mut ev_spawn_body: EventWriter<SpawnBody>,
-    query: Query<&ActionState<Action>>,
 ) {
-    let action_state = query.single();
+    let (action_state, mut rng) = query.single_mut();
 
-    // if action_state.just_pressed(&Action::SpawnRandomBody) {
-    //     ev_spawn_body.send(SpawnBody {
-    //         position: (),
-    //         velocity: (),
-    //         color: (),
-    //         mass: (),
-    //     });
-    // }
+    if action_state.just_pressed(&Action::SpawnRandomBody) {
+        ev_spawn_body.send(SpawnBody {
+            position: 100.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
+            velocity: 5.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
+            mass: 1000.0 * rng.f32(),
+            color: Color::Hsla {
+                saturation: rng.f32() / 2.0 + 0.5,
+                lightness: rng.f32() / 2.0 + 0.5,
+                hue: rng.f32(),
+                alpha: 1.0,
+            },
+        });
+    }
 }
