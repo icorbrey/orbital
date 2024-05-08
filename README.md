@@ -14,7 +14,7 @@ cargo run
 ## Upcoming features
 
 - [ ] Planetary collisions
-- [ ] Random planet launcher
+- [x] Random planet launcher
 - [ ] Mouse planet launcher
 - [ ] Planet sprites
 - [ ] Background star field
