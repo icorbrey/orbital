@@ -74,13 +74,13 @@ fn spawn_random_body(
 
     if action_state.just_pressed(&Action::SpawnRandomBody) {
         ev_spawn_body.send(SpawnBody {
-            position: 100.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
-            velocity: 5.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
+            position: 200.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
+            velocity: 100.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
             mass: 1000.0 * rng.f32(),
             color: Color::Hsla {
-                saturation: rng.f32() / 2.0 + 0.5,
-                lightness: rng.f32() / 2.0 + 0.5,
-                hue: rng.f32(),
+                saturation: 0.2 + 0.8 * rng.f32(),
+                lightness: 0.2 + 0.8 * rng.f32(),
+                hue: 360.0 * rng.f32(),
                 alpha: 1.0,
             },
         });

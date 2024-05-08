@@ -40,7 +40,11 @@ pub fn spawn_bodies(
                 ..default()
             },
             MaterialMesh2dBundle {
-                transform: Transform::from_xyz(event.position.x, event.position.y, -event.mass),
+                transform: Transform::from_xyz(
+                    event.position.x,
+                    event.position.y,
+                    -event.mass / 10000.0,
+                ),
                 material: materials.add(event.color),
                 mesh: Mesh2dHandle(meshes.add(Circle {
                     radius: event.mass / 10.0,

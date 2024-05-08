@@ -29,7 +29,8 @@ fn compute_gravity(mut query: Query<(&Transform, &mut Motion)>) {
         let interval = transform_b.translation - transform_a.translation;
         let distance = interval.length();
 
-        let gravity = GRAV_CONST * interval.normalize() * mass_a * mass_b / distance.powf(2.0);
+        let mut gravity = GRAV_CONST * interval.normalize() * mass_a * mass_b / distance.powf(2.0);
+        gravity.z = 0.0;
 
         motion_a.acceleration += gravity / mass_a;
         motion_b.acceleration -= gravity / mass_b;
