@@ -12,11 +12,11 @@ use motion::MotionPlugin;
 
 fn main() {
     App::new()
+        .add_plugins(DefaultPlugins)
         .add_plugins((
-            DefaultPlugins,
-            RngPlugin::default(),
-            EditorPlugin::default(),
             InputManagerPlugin::<Action>::default(),
+            EditorPlugin::new(),
+            RngPlugin::new(),
         ))
         .add_plugins((CameraPlugin, BodyPlugin, MotionPlugin))
         .add_systems(Startup, setup)
@@ -74,8 +74,8 @@ fn spawn_random_body(
 
     if action_state.just_pressed(&Action::SpawnRandomBody) {
         ev_spawn_body.send(SpawnBody {
-            position: 200.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
             velocity: 100.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
+            position: 200.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
             mass: 1000.0 * rng.f32(),
             color: Color::Hsla {
                 saturation: 0.2 + 0.8 * rng.f32(),
