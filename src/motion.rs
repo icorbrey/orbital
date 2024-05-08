@@ -12,6 +12,7 @@ impl Plugin for MotionPlugin {
 pub struct Motion {
     pub acceleration: Vec3,
     pub velocity: Vec3,
+    pub radius: f32,
     pub mass: f32,
 }
 

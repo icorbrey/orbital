@@ -36,10 +36,8 @@ fn setup(
 ) {
     let input_map = InputMap::new([(Action::SpawnRandomBody, KeyCode::Space)]);
 
-    commands.spawn((
-        InputManagerBundle::with_map(input_map),
-        RngComponent::from(&mut global_rng),
-    ));
+    commands.spawn(InputManagerBundle::with_map(input_map));
+    commands.spawn(RngComponent::from(&mut global_rng));
 
     ev_spawn_body.send_batch(vec![
         SpawnBody {
@@ -67,10 +65,12 @@ fn setup(
 }
 
 fn spawn_random_body(
-    mut query: Query<(&ActionState<Action>, &mut RngComponent)>,
+    action_state: Query<&ActionState<Action>>,
     mut ev_spawn_body: EventWriter<SpawnBody>,
+    mut rng: Query<&mut RngComponent>,
 ) {
-    let (action_state, mut rng) = query.single_mut();
+    let action_state = action_state.single();
+    let mut rng = rng.single_mut();
 
     if action_state.just_pressed(&Action::SpawnRandomBody) {
         ev_spawn_body.send(SpawnBody {
