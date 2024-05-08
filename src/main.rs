@@ -16,6 +16,7 @@ fn main() {
             DefaultPlugins,
             RngPlugin::default(),
             EditorPlugin::default(),
+            InputManagerPlugin::<Action>::default(),
         ))
         .add_plugins((CameraPlugin, BodyPlugin, MotionPlugin))
         .add_systems(Startup, setup)

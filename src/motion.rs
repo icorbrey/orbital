@@ -43,8 +43,6 @@ fn tick_motion(mut query: Query<(&mut Transform, &mut Motion)>, time: Res<Time>)
         motion.velocity += acceleration;
         motion.acceleration = Vec3::ZERO;
 
-        println!("{:?}", motion);
-
         transform.translation += motion.velocity * time.delta_seconds();
     }
 }
