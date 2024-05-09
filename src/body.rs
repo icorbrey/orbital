@@ -80,36 +80,17 @@ pub fn check_for_collisions(
         }
 
         let total_mass = motion_a.mass + motion_b.mass;
-        let system_velocity = motion_a.velocity + motion_b.velocity;
+        let system_velocity = (motion_a.velocity + motion_b.velocity).xy();
         let system_position =
             (position_a * motion_a.mass + position_b * motion_b.mass) / total_mass;
+        let relative_speed = (motion_a.velocity - motion_b.velocity).length();
 
         commands.entity(entity_a).despawn();
         commands.entity(entity_b).despawn();
 
         if total_mass < 100.0 {
             continue;
-        }
-
-        let rubble_count = rng.u8(4..=10);
-
-        for i in 0..rubble_count {
-            let theta: f32 = (360.0 * f32::from(i)) / f32::from(rubble_count);
-
-            let mass = total_mass / f32::from(rubble_count);
-
-            let velocity = 0.5
-                * Vec2::new(
-                    system_velocity.x * theta.cos() - system_velocity.y * theta.sin(),
-                    system_velocity.x * theta.sin() + system_velocity.y * theta.cos(),
-                );
-
-            let position = system_position
-                + Vec2::new(
-                    25.0 * theta.cos() - 25.0 * theta.sin(),
-                    25.0 * theta.sin() + 25.0 * theta.cos(),
-                );
-
+        } else if relative_speed / total_mass < 10.0 {
             ev_spawn_body.send(SpawnBody {
                 color: Color::Hsla {
                     saturation: 0.2 + 0.8 * rng.f32(),
@@ -117,11 +98,37 @@ pub fn check_for_collisions(
                     hue: 360.0 * rng.f32(),
                     alpha: 1.0,
                 },
-                position,
-                velocity,
-                mass,
-                ..default()
+                position: system_position,
+                velocity: system_velocity,
+                mass: total_mass,
             });
+        } else {
+            let rubble_count = rng.u8(4..=10);
+
+            let mass = total_mass / f32::from(rubble_count);
+
+            for i in 0..rubble_count {
+                let theta: f32 = (360.0 * f32::from(i)) / f32::from(rubble_count);
+
+                let velocity = system_velocity
+                    + 1000.0 * Vec2::new(theta.cos() - theta.sin(), theta.sin() + theta.cos());
+
+                let position = system_position
+                    + mass / 10.0 * Vec2::new(theta.cos() - theta.sin(), theta.sin() + theta.cos());
+
+                ev_spawn_body.send(SpawnBody {
+                    color: Color::Hsla {
+                        saturation: 0.2 + 0.8 * rng.f32(),
+                        lightness: 0.2 + 0.8 * rng.f32(),
+                        hue: 360.0 * rng.f32(),
+                        alpha: 1.0,
+                    },
+                    position,
+                    velocity,
+                    mass,
+                    ..default()
+                });
+            }
         }
     }
 }
