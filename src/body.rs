@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::{
     prelude::*,
     sprite::{MaterialMesh2dBundle, Mesh2dHandle},
@@ -26,6 +28,8 @@ pub struct SpawnBody {
     pub mass: f32,
 }
 
+const DENSITY: f32 = 0.000_000_005_51; // kg/m^3
+
 pub fn spawn_bodies(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut ev_spawn_body: EventReader<SpawnBody>,
@@ -33,7 +37,7 @@ pub fn spawn_bodies(
     mut commands: Commands,
 ) {
     for event in ev_spawn_body.read() {
-        let radius = event.mass / 10.0;
+        let radius = ((3.0 * event.mass / DENSITY) / (4.0 * PI)).cbrt();
         commands.spawn((
             Body,
             Motion {
