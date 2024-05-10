@@ -16,6 +16,12 @@ pub struct Motion {
     pub mass: f32,
 }
 
+impl Motion {
+    pub fn exert_force(&mut self, force: Vec3) {
+        self.acceleration += force / self.mass;
+    }
+}
+
 const GRAV_CONST: f32 = 4.0;
 
 fn compute_gravity(mut query: Query<(&Transform, &mut Motion)>) {
@@ -24,17 +30,15 @@ fn compute_gravity(mut query: Query<(&Transform, &mut Motion)>) {
         let (transform_a, mut motion_a) = a;
         let (transform_b, mut motion_b) = b;
 
-        let mass_a = motion_a.mass;
-        let mass_b = motion_b.mass;
-
         let interval = transform_b.translation - transform_a.translation;
         let distance = interval.length();
 
-        let mut gravity = GRAV_CONST * interval.normalize() * mass_a * mass_b / distance.powf(2.0);
+        let mut gravity =
+            GRAV_CONST * interval.normalize() * motion_a.mass * motion_b.mass / distance.powf(2.0);
         gravity.z = 0.0;
 
-        motion_a.acceleration += gravity / mass_a;
-        motion_b.acceleration -= gravity / mass_b;
+        motion_a.exert_force(gravity);
+        motion_b.exert_force(-1.0 * gravity);
     }
 }
 

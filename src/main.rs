@@ -42,23 +42,23 @@ fn setup(
     ev_spawn_body.send_batch(vec![
         SpawnBody {
             position: Vec2::new(100.0, 0.0),
-            velocity: Vec2::Y,
+            velocity: 50.0 * Vec2::Y,
             color: Color::RED,
-            mass: 100.0,
+            mass: 10000.0,
             ..default()
         },
         SpawnBody {
             position: Vec2::new(0.0, 200.0),
+            velocity: 50.0 * Vec2::NEG_X,
             color: Color::GREEN,
-            velocity: Vec2::NEG_X,
-            mass: 200.0,
+            mass: 20000.0,
             ..default()
         },
         SpawnBody {
             position: Vec2::new(-50.0, -50.0),
-            velocity: Vec2::NEG_ONE,
+            velocity: 50.0 * Vec2::NEG_ONE,
             color: Color::BLUE,
-            mass: 400.0,
+            mass: 40000.0,
             ..default()
         },
     ]);
@@ -76,7 +76,7 @@ fn spawn_random_body(
         ev_spawn_body.send(SpawnBody {
             velocity: 100.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
             position: 200.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
-            mass: 1000.0 * rng.f32(),
+            mass: 1000000.0 * rng.f32(),
             color: Color::Hsla {
                 saturation: 0.2 + 0.8 * rng.f32(),
                 lightness: 0.2 + 0.8 * rng.f32(),

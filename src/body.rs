@@ -28,7 +28,7 @@ pub struct SpawnBody {
     pub mass: f32,
 }
 
-const DENSITY: f32 = 0.000_000_005_51; // kg/m^3
+const DENSITY: f32 = 0.551; // g/cm^3
 
 pub fn spawn_bodies(
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -84,17 +84,19 @@ pub fn check_for_collisions(
         }
 
         let total_mass = motion_a.mass + motion_b.mass;
+        let mass_disparity = (motion_a.mass - motion_b.mass).abs() + 0.0001;
         let system_velocity = (motion_a.velocity + motion_b.velocity).xy();
         let system_position =
             (position_a * motion_a.mass + position_b * motion_b.mass) / total_mass;
         let relative_speed = (motion_a.velocity - motion_b.velocity).length();
+        let collision_energy = 0.5 * total_mass * relative_speed.powf(2.0);
 
         commands.entity(entity_a).despawn();
         commands.entity(entity_b).despawn();
 
         if total_mass < 100.0 {
             continue;
-        } else if relative_speed / total_mass < 10.0 {
+        } else if collision_energy / mass_disparity < 10_000_000.0 {
             ev_spawn_body.send(SpawnBody {
                 color: Color::Hsla {
                     saturation: 0.2 + 0.8 * rng.f32(),
@@ -107,18 +109,18 @@ pub fn check_for_collisions(
                 mass: total_mass,
             });
         } else {
-            let rubble_count = rng.u8(4..=10);
+            let n = rng.u8(4..=10);
+            let mass = total_mass / f32::from(n);
+            let exit_speed = relative_speed / f32::from(n).sqrt();
 
-            let mass = total_mass / f32::from(rubble_count);
-
-            for i in 0..rubble_count {
-                let theta: f32 = (360.0 * f32::from(i)) / f32::from(rubble_count);
+            for i in 0..n {
+                let theta: f32 = (360.0 * f32::from(i)) / f32::from(n);
 
                 let velocity = system_velocity
-                    + 1000.0 * Vec2::new(theta.cos() - theta.sin(), theta.sin() + theta.cos());
+                    + exit_speed * Vec2::new(theta.cos() - theta.sin(), theta.sin() + theta.cos());
 
                 let position = system_position
-                    + mass / 10.0 * Vec2::new(theta.cos() - theta.sin(), theta.sin() + theta.cos());
+                    + threshold * Vec2::new(theta.cos() - theta.sin(), theta.sin() + theta.cos());
 
                 ev_spawn_body.send(SpawnBody {
                     color: Color::Hsla {
