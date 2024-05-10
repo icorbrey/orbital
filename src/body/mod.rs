@@ -1,68 +1,23 @@
-use std::f32::consts::PI;
+pub mod prelude;
+pub mod spawn;
 
-use bevy::{
-    prelude::*,
-    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
-};
-use bevy_turborand::prelude::*;
+use self::spawn::SpawnBodyPlugin;
+use crate::prelude::{body::*, *};
 
-use crate::motion::Motion;
-
-pub struct BodyPlugin;
-
+pub(crate) struct BodyPlugin;
 impl Plugin for BodyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SpawnBody>()
-            .add_systems(Update, (check_for_collisions, spawn_bodies));
+        app.add_plugins(SpawnBodyPlugin)
+            .add_systems(Update, check_for_collisions);
     }
 }
 
 #[derive(Component, Debug, Default)]
-pub struct Body;
+pub(crate) struct Body;
 
-#[derive(Event, Default)]
-pub struct SpawnBody {
-    pub position: Vec2,
-    pub velocity: Vec2,
-    pub color: Color,
-    pub mass: f32,
-}
-
-const DENSITY: f32 = 0.551; // g/cm^3
-
-pub fn spawn_bodies(
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut ev_spawn_body: EventReader<SpawnBody>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut commands: Commands,
-) {
-    for event in ev_spawn_body.read() {
-        let radius = ((3.0 * event.mass / DENSITY) / (4.0 * PI)).cbrt();
-        commands.spawn((
-            Body,
-            Motion {
-                velocity: event.velocity.extend(0.0),
-                mass: event.mass,
-                radius,
-                ..default()
-            },
-            MaterialMesh2dBundle {
-                transform: Transform::from_xyz(
-                    event.position.x,
-                    event.position.y,
-                    -event.mass / 10000.0,
-                ),
-                material: materials.add(event.color),
-                mesh: Mesh2dHandle(meshes.add(Circle { radius })),
-                ..default()
-            },
-        ));
-    }
-}
-
-pub fn check_for_collisions(
+fn check_for_collisions(
     bodies: Query<(Entity, &Transform, &Motion), With<Body>>,
-    mut ev_spawn_body: EventWriter<SpawnBody>,
+    mut ev_spawn_body: EventWriter<SpawnBodyEvent>,
     mut rng: Query<&mut RngComponent>,
     mut commands: Commands,
 ) {
@@ -96,8 +51,8 @@ pub fn check_for_collisions(
 
         if total_mass < 100.0 {
             continue;
-        } else if collision_energy / mass_disparity < 10_000_000.0 {
-            ev_spawn_body.send(SpawnBody {
+        } else if collision_energy / mass_disparity < 1_000_000.0 {
+            ev_spawn_body.send(SpawnBodyEvent {
                 color: Color::Hsla {
                     saturation: 0.2 + 0.8 * rng.f32(),
                     lightness: 0.2 + 0.8 * rng.f32(),
@@ -109,7 +64,7 @@ pub fn check_for_collisions(
                 mass: total_mass,
             });
         } else {
-            let n = rng.u8(4..=10);
+            let n = rng.u8(2..=5);
             let mass = total_mass / f32::from(n);
             let exit_speed = relative_speed / f32::from(n).sqrt();
 
@@ -122,7 +77,7 @@ pub fn check_for_collisions(
                 let position = system_position
                     + threshold * Vec2::new(theta.cos() - theta.sin(), theta.sin() + theta.cos());
 
-                ev_spawn_body.send(SpawnBody {
+                ev_spawn_body.send(SpawnBodyEvent {
                     color: Color::Hsla {
                         saturation: 0.2 + 0.8 * rng.f32(),
                         lightness: 0.2 + 0.8 * rng.f32(),

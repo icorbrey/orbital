@@ -1,14 +1,17 @@
 mod body;
 mod camera;
 mod motion;
+mod player;
+mod prelude;
 
-use bevy::prelude::*;
-use bevy_editor_pls::EditorPlugin;
-use bevy_turborand::prelude::*;
-use body::{BodyPlugin, SpawnBody};
-use camera::CameraPlugin;
-use leafwing_input_manager::prelude::*;
-use motion::MotionPlugin;
+use crate::prelude::{body::*, camera::*, motion::*, player::*, *};
+
+mod cleanup {
+    use crate::prelude::*;
+
+    #[derive(Component)]
+    pub struct OnExit;
+}
 
 fn main() {
     App::new()
@@ -18,7 +21,7 @@ fn main() {
             EditorPlugin::new(),
             RngPlugin::new(),
         ))
-        .add_plugins((CameraPlugin, BodyPlugin, MotionPlugin))
+        .add_plugins((BodyPlugin, CameraPlugin, MotionPlugin, PlayerPlugin))
         .add_systems(Startup, setup)
         .add_systems(Update, spawn_random_body)
         .run();
@@ -30,31 +33,39 @@ enum Action {
 }
 
 fn setup(
-    mut ev_spawn_body: EventWriter<SpawnBody>,
+    mut ev_spawn_body: EventWriter<SpawnBodyEvent>,
     mut global_rng: ResMut<GlobalRng>,
     mut commands: Commands,
 ) {
     let input_map = InputMap::new([(Action::SpawnRandomBody, KeyCode::Space)]);
 
-    commands.spawn(InputManagerBundle::with_map(input_map));
-    commands.spawn(RngComponent::from(&mut global_rng));
+    commands.spawn((
+        Name::new("Input Manager"),
+        cleanup::OnExit,
+        InputManagerBundle::with_map(input_map),
+    ));
+    commands.spawn((
+        Name::new("Random Number Generator"),
+        cleanup::OnExit,
+        RngComponent::from(&mut global_rng),
+    ));
 
     ev_spawn_body.send_batch(vec![
-        SpawnBody {
+        SpawnBodyEvent {
             position: Vec2::new(100.0, 0.0),
             velocity: 50.0 * Vec2::Y,
             color: Color::RED,
             mass: 10000.0,
             ..default()
         },
-        SpawnBody {
+        SpawnBodyEvent {
             position: Vec2::new(0.0, 200.0),
             velocity: 50.0 * Vec2::NEG_X,
             color: Color::GREEN,
             mass: 20000.0,
             ..default()
         },
-        SpawnBody {
+        SpawnBodyEvent {
             position: Vec2::new(-50.0, -50.0),
             velocity: 50.0 * Vec2::NEG_ONE,
             color: Color::BLUE,
@@ -66,14 +77,14 @@ fn setup(
 
 fn spawn_random_body(
     action_state: Query<&ActionState<Action>>,
-    mut ev_spawn_body: EventWriter<SpawnBody>,
+    mut ev_spawn_body: EventWriter<SpawnBodyEvent>,
     mut rng: Query<&mut RngComponent>,
 ) {
     let action_state = action_state.single();
     let mut rng = rng.single_mut();
 
     if action_state.just_pressed(&Action::SpawnRandomBody) {
-        ev_spawn_body.send(SpawnBody {
+        ev_spawn_body.send(SpawnBodyEvent {
             velocity: 100.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
             position: 200.0 * Vec2::new(rng.f32() - 0.5, rng.f32() - 0.5),
             mass: 1000000.0 * rng.f32(),
